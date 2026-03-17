@@ -36,7 +36,7 @@ function StatCard({ label, value, icon: Icon, iconBg, iconColor, valueColor }) {
   )
 }
 
-export default function Dashboard() {
+export default function Dashboard({ onNavigate }) {
   const { getAccessTokenSilently } = useAuth0()
   const now = new Date()
   const thisMonthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
@@ -55,14 +55,28 @@ export default function Dashboard() {
     try {
       const token = await getAccessTokenSilently()
       const [s, t] = await Promise.all([getSummary(token, from, to), getTrend(token, 12)])
-      setSummary(s)
-      setTrend(t)
+      setSummary({
+        total_income: s.summary?.totalIncome || 0,
+        total_expenses: s.summary?.totalExpenses || 0,
+        balance: s.summary?.totalSavings || 0,
+        expenses_by_category: s.expensesByCategory || [],
+        recent_expenses: (s.recentTransactions || []).filter(r => r.type === 'expense').map(r => ({ ...r, description: r.vendor })),
+        recent_income: (s.recentTransactions || []).filter(r => r.type === 'income').map(r => ({ ...r, description: r.vendor })),
+      })
+      setTrend({
+        income: (t.monthly || []).map(m => ({ month: m.month, total: m.income })),
+        expenses: (t.monthly || []).map(m => ({ month: m.month, total: m.expenses })),
+      })
     } catch (e) {
+      if (e.message?.toLowerCase().includes('household')) {
+        onNavigate?.('settings')
+        return
+      }
       setError(e.message)
     } finally {
       setLoading(false)
     }
-  }, [getAccessTokenSilently, from, to])
+  }, [getAccessTokenSilently, from, to, onNavigate])
 
   useEffect(() => { load() }, [load])
 

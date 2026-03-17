@@ -16,10 +16,14 @@ export async function apiFetch(path, token, options = {}) {
 }
 
 export const getSummary = (token, from, to) =>
-  apiFetch(`/api/summary${from ? `?from=${from}&to=${to}` : ''}`, token)
+  apiFetch(`/api/dashboard/summary${from ? `?start_date=${from}&end_date=${to}` : ''}`, token)
 
-export const getTrend = (token, months = 12) =>
-  apiFetch(`/api/trend?months=${months}`, token)
+export const getTrend = (token, months = 12) => {
+  const to = new Date().toISOString().split('T')[0]
+  const d = new Date(); d.setMonth(d.getMonth() - months + 1); d.setDate(1)
+  const from = d.toISOString().split('T')[0]
+  return apiFetch(`/api/dashboard/summary?start_date=${from}&end_date=${to}`, token)
+}
 
 export const getExpenses = (token, from, to) =>
   apiFetch(`/api/expenses${from ? `?start_date=${from}&end_date=${to}&limit=1000` : '?limit=1000'}`, token)
