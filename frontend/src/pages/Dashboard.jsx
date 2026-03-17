@@ -59,13 +59,13 @@ export default function Dashboard({ onNavigate }) {
         total_income: s.summary?.totalIncome || 0,
         total_expenses: s.summary?.totalExpenses || 0,
         balance: s.summary?.totalSavings || 0,
-        expenses_by_category: s.expensesByCategory || [],
+        expenses_by_category: (s.expensesByCategory || []).map(r => ({ ...r, total: parseFloat(r.total) })),
         recent_expenses: (s.recentTransactions || []).filter(r => r.type === 'expense').map(r => ({ ...r, description: r.vendor })),
         recent_income: (s.recentTransactions || []).filter(r => r.type === 'income').map(r => ({ ...r, description: r.vendor })),
       })
       setTrend({
-        income: (t.monthly || []).map(m => ({ month: m.month, total: m.income })),
-        expenses: (t.monthly || []).map(m => ({ month: m.month, total: m.expenses })),
+        income: (t.monthly || []).map(m => ({ month: m.month, total: parseFloat(m.income) })),
+        expenses: (t.monthly || []).map(m => ({ month: m.month, total: parseFloat(m.expenses) })),
       })
     } catch (e) {
       if (e.message?.toLowerCase().includes('household')) {
@@ -180,14 +180,13 @@ export default function Dashboard({ onNavigate }) {
                 <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
                     <Pie data={summary.expenses_by_category} dataKey="total" nameKey="category"
-                      cx="50%" cy="50%" outerRadius={100}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}>
+                      cx="50%" cy="45%" outerRadius={90} innerRadius={45}>
                       {summary.expenses_by_category.map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={v => fmt(v)} />
+                    <Tooltip formatter={(v, name) => [fmt(v), name]} />
+                    <Legend iconType="circle" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
