@@ -1,29 +1,29 @@
 import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { GitCompare } from 'lucide-react';
 import { getCompare } from '../api';
 
-const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#6366f1','#14b8a6','#a855f7'];
 const ALL_CATS = ['Bills','Car','Clothes','Entertainment','Food','Other','Sadaf','Vacation','Self Improve','House','Subscription','Work','Health','Gift'];
 
 function fmt(n) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 }
 
-function SummaryTable({ label, data, color }) {
+function SummaryTable({ label, data, color, borderColor }) {
   return (
-    <div className="card flex-1">
-      <h3 className={`font-semibold mb-3 ${color}`}>{label}</h3>
-      <div className="space-y-1 text-sm">
-        <div className="flex justify-between py-1 border-b border-gray-50">
+    <div className={`card flex-1 border-t-4 ${borderColor}`}>
+      <h3 className={`font-semibold mb-4 text-sm ${color}`}>{label}</h3>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between py-2 border-b border-gray-50">
           <span className="text-gray-500">Income</span>
-          <span className="font-medium text-green-600">{fmt(data.totalIncome)}</span>
+          <span className="font-semibold text-green-600">{fmt(data.totalIncome)}</span>
         </div>
-        <div className="flex justify-between py-1 border-b border-gray-50">
+        <div className="flex justify-between py-2 border-b border-gray-50">
           <span className="text-gray-500">Expenses</span>
-          <span className="font-medium text-red-500">{fmt(data.totalExpenses)}</span>
+          <span className="font-semibold text-red-500">{fmt(data.totalExpenses)}</span>
         </div>
-        <div className="flex justify-between py-1">
+        <div className="flex justify-between py-2">
           <span className="text-gray-500">Savings</span>
           <span className={`font-bold ${data.totalSavings >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
             {fmt(data.totalSavings)}
@@ -62,7 +62,6 @@ export default function HistoricalComparison() {
     }
   }
 
-  // Build per-category bar chart data
   const catChartData = data ? ALL_CATS.map(cat => {
     const p1 = data.period1.expensesByCategory.find(r => r.category === cat);
     const p2 = data.period2.expensesByCategory.find(r => r.category === cat);
@@ -78,16 +77,16 @@ export default function HistoricalComparison() {
 
       {/* Period selectors */}
       <div className="grid sm:grid-cols-2 gap-4">
-        <div className="card space-y-3">
-          <h3 className="font-semibold text-blue-700">Period 1</h3>
+        <div className="card border-t-4 border-blue-500 space-y-3">
+          <h3 className="font-semibold text-blue-700 text-sm">Period 1</h3>
           <div className="flex gap-2 items-center flex-wrap">
             <input type="date" className="input flex-1" value={p1Start} onChange={e => setP1Start(e.target.value)} />
             <span className="text-gray-400">–</span>
             <input type="date" className="input flex-1" value={p1End} onChange={e => setP1End(e.target.value)} />
           </div>
         </div>
-        <div className="card space-y-3">
-          <h3 className="font-semibold text-purple-700">Period 2</h3>
+        <div className="card border-t-4 border-purple-500 space-y-3">
+          <h3 className="font-semibold text-purple-700 text-sm">Period 2</h3>
           <div className="flex gap-2 items-center flex-wrap">
             <input type="date" className="input flex-1" value={p2Start} onChange={e => setP2Start(e.target.value)} />
             <span className="text-gray-400">–</span>
@@ -97,20 +96,29 @@ export default function HistoricalComparison() {
       </div>
 
       <button className="btn-primary" onClick={compare} disabled={loading}>
+        <GitCompare className="w-4 h-4" />
         {loading ? 'Comparing…' : 'Compare Periods'}
       </button>
 
-      {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg">{error}</div>}
+      {error && <div className="bg-red-50 text-red-700 p-4 rounded-xl">{error}</div>}
 
       {data && (
         <>
-          {/* Summary side by side */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <SummaryTable label={`Period 1: ${p1Start} → ${p1End}`} data={data.period1} color="text-blue-700" />
-            <SummaryTable label={`Period 2: ${p2Start} → ${p2End}`} data={data.period2} color="text-purple-700" />
+            <SummaryTable
+              label={`Period 1: ${p1Start} → ${p1End}`}
+              data={data.period1}
+              color="text-blue-700"
+              borderColor="border-blue-500"
+            />
+            <SummaryTable
+              label={`Period 2: ${p2Start} → ${p2End}`}
+              data={data.period2}
+              color="text-purple-700"
+              borderColor="border-purple-500"
+            />
           </div>
 
-          {/* Overview bar chart */}
           <div className="card">
             <h2 className="font-semibold text-gray-900 mb-4">Income / Expenses / Savings</h2>
             <ResponsiveContainer width="100%" height={260}>
@@ -130,7 +138,6 @@ export default function HistoricalComparison() {
             </ResponsiveContainer>
           </div>
 
-          {/* Per-category breakdown */}
           {catChartData.length > 0 && (
             <div className="card">
               <h2 className="font-semibold text-gray-900 mb-4">Expense Breakdown by Category</h2>
@@ -141,12 +148,11 @@ export default function HistoricalComparison() {
                   <YAxis dataKey="category" type="category" tick={{ fontSize: 11 }} width={90} />
                   <Tooltip formatter={v => fmt(v)} />
                   <Legend />
-                  <Bar dataKey="Period1" name={`P1`} fill="#3b82f6" radius={[0,4,4,0]} />
-                  <Bar dataKey="Period2" name={`P2`} fill="#a855f7" radius={[0,4,4,0]} />
+                  <Bar dataKey="Period1" name="P1" fill="#3b82f6" radius={[0,4,4,0]} />
+                  <Bar dataKey="Period2" name="P2" fill="#a855f7" radius={[0,4,4,0]} />
                 </BarChart>
               </ResponsiveContainer>
 
-              {/* Numeric table */}
               <div className="overflow-x-auto mt-6">
                 <table className="w-full text-sm">
                   <thead>
@@ -161,7 +167,7 @@ export default function HistoricalComparison() {
                     {catChartData.map(row => {
                       const diff = row.Period2 - row.Period1;
                       return (
-                        <tr key={row.category} className="hover:bg-gray-50">
+                        <tr key={row.category} className="hover:bg-gray-50 transition-colors">
                           <td className="table-td font-medium">{row.category}</td>
                           <td className="table-td text-right">{fmt(row.Period1)}</td>
                           <td className="table-td text-right">{fmt(row.Period2)}</td>

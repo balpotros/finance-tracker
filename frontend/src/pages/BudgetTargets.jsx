@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { Wallet, TrendingDown, PiggyBank } from 'lucide-react';
 import { getBudget, getBudgetActuals, upsertBudget } from '../api';
 
 const CATEGORIES = ['Bills','Car','Clothes','Entertainment','Food','Other','Sadaf','Vacation','Self Improve','House','Subscription','Work','Health','Gift'];
@@ -90,30 +91,53 @@ export default function BudgetTargets() {
         </div>
       </div>
 
-      {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg">{error}</div>}
+      {error && <div className="bg-red-50 text-red-700 p-4 rounded-xl">{error}</div>}
 
-      {/* Summary row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="card">
-          <p className="text-sm text-gray-500">Total Budget</p>
-          <p className="text-xl font-bold text-gray-900">{fmt(totalTarget)}</p>
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+              <Wallet className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Total Budget</p>
+              <p className="text-2xl font-bold text-gray-900">{fmt(totalTarget)}</p>
+            </div>
+          </div>
         </div>
-        <div className="card">
-          <p className="text-sm text-gray-500">Total Spent</p>
-          <p className={`text-xl font-bold ${totalActual > totalTarget ? 'text-red-500' : 'text-gray-900'}`}>{fmt(totalActual)}</p>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+              <TrendingDown className="w-6 h-6 text-red-500" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Total Spent</p>
+              <p className={`text-2xl font-bold ${totalActual > totalTarget ? 'text-red-500' : 'text-gray-900'}`}>
+                {fmt(totalActual)}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="card col-span-2 sm:col-span-1">
-          <p className="text-sm text-gray-500">Remaining</p>
-          <p className={`text-xl font-bold ${totalTarget - totalActual < 0 ? 'text-red-500' : 'text-green-600'}`}>
-            {fmt(totalTarget - totalActual)}
-          </p>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${totalTarget - totalActual < 0 ? 'bg-red-50' : 'bg-green-50'}`}>
+              <PiggyBank className={`w-6 h-6 ${totalTarget - totalActual < 0 ? 'text-red-500' : 'text-green-600'}`} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Remaining</p>
+              <p className={`text-2xl font-bold ${totalTarget - totalActual < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                {fmt(totalTarget - totalActual)}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       {loading ? (
         <div className="text-center py-16 text-gray-400">Loading…</div>
       ) : (
-        <div className="card p-0 overflow-x-auto">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
@@ -134,7 +158,7 @@ export default function BudgetTargets() {
                 const isEditing = editing[cat] !== undefined;
 
                 return (
-                  <tr key={cat} className="hover:bg-gray-50">
+                  <tr key={cat} className="hover:bg-gray-50 transition-colors">
                     <td className="table-td font-medium">{cat}</td>
                     <td className="table-td text-right">
                       {isEditing ? (
@@ -143,7 +167,10 @@ export default function BudgetTargets() {
                           value={editing[cat]}
                           onChange={e => setEditing(ed => ({ ...ed, [cat]: e.target.value }))}
                           autoFocus
-                          onKeyDown={e => { if (e.key === 'Enter') saveTarget(cat); if (e.key === 'Escape') setEditing(ed => { const n={...ed}; delete n[cat]; return n; }); }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') saveTarget(cat);
+                            if (e.key === 'Escape') setEditing(ed => { const n={...ed}; delete n[cat]; return n; });
+                          }}
                         />
                       ) : (
                         <span className={target ? '' : 'text-gray-300'}>{target ? fmt(target) : '—'}</span>

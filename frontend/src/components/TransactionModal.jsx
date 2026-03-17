@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 
 export default function TransactionModal({ open, onClose, onSave, initial, type, currentUserId }) {
   const isExpense = type === 'expense';
@@ -54,21 +55,30 @@ export default function TransactionModal({ open, onClose, onSave, initial, type,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">
             {initial ? 'Edit' : 'New'} {isExpense ? 'Expense' : 'Income'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {error && <div className="bg-red-50 text-red-700 px-3 py-2 rounded-lg text-sm">{error}</div>}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Date *</label>
-              <input type="date" className="input" value={form.date} onChange={e => set('date', e.target.value)} required />
+              <input type="date" className="input" value={form.date}
+                onChange={e => set('date', e.target.value)} required />
             </div>
             <div>
               <label className="label">Amount ($) *</label>
@@ -96,14 +106,17 @@ export default function TransactionModal({ open, onClose, onSave, initial, type,
               onChange={e => set('notes', e.target.value)} />
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" checked={form.hidden || false}
-              onChange={e => set('hidden', e.target.checked)} className="rounded" />
+              onChange={e => set('hidden', e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             <span className="text-sm text-gray-600">Hidden (exclude from calculations)</span>
           </label>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1 justify-center">Cancel</button>
+            <button type="button" onClick={onClose} className="btn-secondary flex-1 justify-center">
+              Cancel
+            </button>
             <button type="submit" className="btn-primary flex-1 justify-center" disabled={saving}>
               {saving ? 'Saving…' : 'Save'}
             </button>
