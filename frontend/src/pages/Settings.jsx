@@ -153,13 +153,13 @@ export default function Settings({ onNameUpdate }) {
               value={editName}
               onChange={e => setEditName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSaveName()}
-              className="flex-1 border rounded-lg px-3 py-2 text-sm"
+              className="flex-1 border rounded-lg px-3 py-2.5 min-h-[44px] text-sm"
               placeholder="Your name"
             />
             <button
               onClick={handleSaveName}
               disabled={saving}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
             >
               {saving ? 'Saving...' : 'Save'}
             </button>
@@ -216,13 +216,13 @@ export default function Settings({ onNameUpdate }) {
             <div className="flex gap-2">
               <button
                 onClick={() => setHhAction('create')}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${hhAction === 'create' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                className={`flex-1 py-2.5 min-h-[44px] rounded-lg text-sm font-medium border transition-colors ${hhAction === 'create' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
               >
                 Create New
               </button>
               <button
                 onClick={() => setHhAction('join')}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${hhAction === 'join' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                className={`flex-1 py-2.5 min-h-[44px] rounded-lg text-sm font-medium border transition-colors ${hhAction === 'join' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
               >
                 Join Existing
               </button>
@@ -234,14 +234,14 @@ export default function Settings({ onNameUpdate }) {
                 placeholder="Paste your partner's Household ID"
                 value={joinId}
                 onChange={e => setJoinId(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border rounded-lg px-3 py-2.5 min-h-[44px] text-sm"
               />
             )}
 
             <button
               onClick={handleHousehold}
               disabled={hhSaving || (hhAction === 'join' && !joinId.trim())}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 min-h-[44px] rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
             >
               {hhSaving ? 'Processing...' : hhAction === 'create' ? 'Create Household' : 'Join Household'}
             </button>
@@ -264,7 +264,7 @@ export default function Settings({ onNameUpdate }) {
             <select
               value={newCatType}
               onChange={e => setNewCatType(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="border rounded-lg px-3 py-2.5 min-h-[44px] text-sm"
             >
               <option value="expense">Expense</option>
               <option value="income">Income</option>
@@ -275,12 +275,12 @@ export default function Settings({ onNameUpdate }) {
               value={newCatName}
               onChange={e => setNewCatName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
-              className="flex-1 min-w-32 border rounded-lg px-3 py-2 text-sm"
+              className="flex-1 min-w-32 border rounded-lg px-3 py-2.5 min-h-[44px] text-sm"
             />
             <button
               onClick={handleAddCategory}
               disabled={catSaving || !newCatName.trim()}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
             >
               Add
             </button>

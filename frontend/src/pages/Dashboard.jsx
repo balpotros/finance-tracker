@@ -115,20 +115,24 @@ export default function Dashboard({ onNavigate }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <h1 className="text-2xl font-bold text-gray-900 flex-1">Dashboard</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          {presets.map(p => (
-            <button key={p.label} onClick={() => { setFrom(p.from); setTo(p.to) }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                from === p.from && to === p.to
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-              }`}>{p.label}</button>
-          ))}
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="input w-36" />
-          <span className="text-gray-400">--</span>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="input w-36" />
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 flex-1">Dashboard</h1>
+          <div className="flex flex-wrap gap-2">
+            {presets.map(p => (
+              <button key={p.label} onClick={() => { setFrom(p.from); setTo(p.to) }}
+                className={`px-3 min-h-[36px] text-xs font-medium rounded-lg border transition-colors ${
+                  from === p.from && to === p.to
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                }`}>{p.label}</button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="input flex-1 sm:w-36 sm:flex-none" />
+          <span className="text-gray-400 shrink-0">—</span>
+          <input type="date" value={to} onChange={e => setTo(e.target.value)} className="input flex-1 sm:w-36 sm:flex-none" />
         </div>
       </div>
 
@@ -157,8 +161,8 @@ export default function Dashboard({ onNavigate }) {
               {trendData.length === 0 ? (
                 <p className="text-gray-400 text-sm text-center py-8">No data available</p>
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={trendData} margin={{ left: 10 }}>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={trendData} margin={{ left: 0, right: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                     <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
@@ -177,7 +181,7 @@ export default function Dashboard({ onNavigate }) {
               {!summary.expenses_by_category?.length ? (
                 <p className="text-gray-400 text-sm text-center py-8">No expenses for selected period</p>
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={240}>
                   <PieChart>
                     <Pie data={summary.expenses_by_category} dataKey="total" nameKey="category"
                       cx="50%" cy="45%" outerRadius={90} innerRadius={45}>
@@ -198,7 +202,7 @@ export default function Dashboard({ onNavigate }) {
             {recentTransactions.length === 0 ? (
               <p className="text-gray-400 text-sm text-center py-8">No transactions for selected period</p>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="-mx-6 overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100">
