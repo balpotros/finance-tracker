@@ -138,7 +138,7 @@ export default function App() {
       )}
 
       {/* Main content */}
-      <div className="flex-1 md:ml-64 min-h-screen flex flex-col">
+      <div className="flex-1 md:ml-64 min-h-screen flex flex-col min-w-0 overflow-x-hidden">
         {/* Mobile top bar */}
         <header className="md:hidden bg-white border-b border-gray-200 px-4 h-16 flex items-center gap-4 sticky top-0 z-20 shrink-0">
           <button

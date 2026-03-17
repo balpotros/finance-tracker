@@ -143,20 +143,26 @@ export default function Income() {
       )}
 
       <div className="card">
-        <div className="flex flex-wrap gap-3 items-end">
-          <div>
-            <label className="label">From</label>
-            <input type="date" className="input" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} />
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-end">
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="label">From</label>
+              <input type="date" className="input" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} />
+            </div>
+            <div className="flex-1">
+              <label className="label">To</label>
+              <input type="date" className="input" value={filterTo} onChange={e => setFilterTo(e.target.value)} />
+            </div>
           </div>
-          <div>
-            <label className="label">To</label>
-            <input type="date" className="input" value={filterTo} onChange={e => setFilterTo(e.target.value)} />
+          <div className="flex gap-2 sm:flex-1">
+            <div className="flex-1 min-w-0">
+              <label className="label">Search</label>
+              <input type="text" className="input" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <div className="flex items-end">
+              <button className="btn-secondary" onClick={() => setSearch('')}>Clear</button>
+            </div>
           </div>
-          <div className="flex-1 min-w-[180px]">
-            <label className="label">Search</label>
-            <input type="text" className="input" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <button className="btn-secondary" onClick={() => setSearch('')}>Clear</button>
         </div>
       </div>
 

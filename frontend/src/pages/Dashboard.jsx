@@ -197,12 +197,14 @@ export default function Dashboard({ onNavigate }) {
             </div>
           </div>
 
-          <div className="card">
-            <h2 className="font-semibold text-gray-900 mb-4">Recent Transactions</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3">
+              <h2 className="font-semibold text-gray-900">Recent Transactions</h2>
+            </div>
             {recentTransactions.length === 0 ? (
-              <p className="text-gray-400 text-sm text-center py-8">No transactions for selected period</p>
+              <p className="text-gray-400 text-sm text-center py-8 px-4">No transactions for selected period</p>
             ) : (
-              <div className="-mx-6 overflow-x-auto">
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100">
@@ -237,6 +239,7 @@ export default function Dashboard({ onNavigate }) {
                 </table>
               </div>
             )}
+            <div className="h-4 sm:h-6" />
           </div>
         </div>
       )}
