@@ -5,6 +5,7 @@ import Expenses from './pages/Expenses.jsx'
 import Income from './pages/Income.jsx'
 import Import from './pages/Import.jsx'
 import Settings from './pages/Settings.jsx'
+import HouseholdSettings from './pages/HouseholdSettings.jsx'
 import { getMe } from './api.js'
 import QuickAddFAB from './components/QuickAddFAB.jsx'
 
@@ -13,6 +14,7 @@ const NAV = [
   { id: 'expenses', label: 'Expenses', icon: '💸' },
   { id: 'income', label: 'Income', icon: '💰' },
   { id: 'import', label: 'Import', icon: '📂' },
+  { id: 'household', label: 'Household', icon: '🏠' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
 ]
 
@@ -68,7 +70,7 @@ export default function App() {
     )
   }
 
-  const PageComponent = { dashboard: Dashboard, expenses: Expenses, income: Income, import: Import, settings: Settings }[page]
+  const PageComponent = { dashboard: Dashboard, expenses: Expenses, income: Income, import: Import, household: HouseholdSettings, settings: Settings }[page]
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
