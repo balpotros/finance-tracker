@@ -1,50 +1,85 @@
-import axios from 'axios';
+const BASE = import.meta.env.VITE_API_URL
 
-const BASE = import.meta.env.VITE_API_URL || '';
-
-let _getToken = null;
-
-export function setTokenGetter(fn) {
-  _getToken = fn;
+export async function apiFetch(path, token, options = {}) {
+  const res = await fetch(`${BASE}${path}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(options.headers || {})
+    }
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error(err.error || res.statusText)
+  }
+  return res.json()
 }
 
-const api = axios.create({ baseURL: BASE });
+export const getSummary = (token, from, to) =>
+  apiFetch(`/api/summary${from ? `?from=${from}&to=${to}` : ''}`, token)
 
-api.interceptors.request.use(async (config) => {
-  if (_getToken) {
-    const token = await _getToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+export const getTrend = (token, months = 12) =>
+  apiFetch(`/api/trend?months=${months}`, token)
 
-// Users
-export const getMe       = () => api.get('/api/users/me').then(r => r.data);
-export const postHousehold = (body) => api.post('/api/users/household', body).then(r => r.data);
+export const getExpenses = (token, from, to) =>
+  apiFetch(`/api/expenses${from ? `?from=${from}&to=${to}&limit=1000` : '?limit=1000'}`, token)
 
-// Dashboard
-export const getDashboard = (params) => api.get('/api/dashboard/summary', { params }).then(r => r.data);
-export const getCompare   = (params) => api.get('/api/dashboard/compare', { params }).then(r => r.data);
+export const addExpense = (token, data) =>
+  apiFetch('/api/expenses', token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
 
-// Expenses
-export const getExpenses    = (params) => api.get('/api/expenses', { params }).then(r => r.data);
-export const createExpense  = (body)   => api.post('/api/expenses', body).then(r => r.data);
-export const updateExpense  = (id, body) => api.put(`/api/expenses/${id}`, body).then(r => r.data);
-export const deleteExpense  = (id)     => api.delete(`/api/expenses/${id}`);
+export const deleteExpense = (token, id) =>
+  apiFetch(`/api/expenses/${id}`, token, { method: 'DELETE' })
 
-// Income
-export const getIncome      = (params) => api.get('/api/income', { params }).then(r => r.data);
-export const createIncome   = (body)   => api.post('/api/income', body).then(r => r.data);
-export const updateIncome   = (id, body) => api.put(`/api/income/${id}`, body).then(r => r.data);
-export const deleteIncome   = (id)     => api.delete(`/api/income/${id}`);
+export const getIncome = (token, from, to) =>
+  apiFetch(`/api/income${from ? `?from=${from}&to=${to}&limit=1000` : '?limit=1000'}`, token)
 
-// Budget
-export const getBudget      = () => api.get('/api/budget').then(r => r.data);
-export const getBudgetActuals = (params) => api.get('/api/budget/actuals', { params }).then(r => r.data);
-export const upsertBudget   = (category, body) => api.put(`/api/budget/${encodeURIComponent(category)}`, body).then(r => r.data);
+export const addIncome = (token, data) =>
+  apiFetch('/api/income', token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
 
-// Import
-export const previewImport  = (formData) => api.post('/api/import/preview', formData).then(r => r.data);
-export const confirmImport  = (formData) => api.post('/api/import/confirm', formData).then(r => r.data);
+export const deleteIncome = (token, id) =>
+  apiFetch(`/api/income/${id}`, token, { method: 'DELETE' })
 
-export default api;
+export const importFile = (token, formData) =>
+  apiFetch('/api/import', token, { method: 'POST', body: formData })
+
+export const getMe = (token) =>
+  apiFetch('/api/users/me', token)
+
+export const updateMe = (token, data) =>
+  apiFetch('/api/users/me', token, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+
+export const manageHousehold = (token, data) =>
+  apiFetch('/api/users/household', token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+
+export const getCategories = (token) =>
+  apiFetch('/api/categories', token)
+
+export const addCategory = (token, data) =>
+  apiFetch('/api/categories', token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+
+export const deleteCategory = (token, data) =>
+  apiFetch('/api/categories', token, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })

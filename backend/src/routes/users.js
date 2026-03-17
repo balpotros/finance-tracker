@@ -53,7 +53,29 @@ router.post('/household', async (req, res) => {
     return res.json({ household: hh.rows[0] });
   }
 
+  if (action === 'leave') {
+    await db.query(`UPDATE users SET household_id = NULL WHERE id = $1`, [user.id]);
+    return res.json({ ok: true });
+  }
+
   res.status(400).json({ error: 'Invalid action' });
+});
+
+// PATCH /api/users/me — update display name
+router.patch('/me', async (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'name is required' });
+
+  try {
+    const result = await db.query(
+      `UPDATE users SET name = $1 WHERE id = $2 RETURNING *`,
+      [name.trim(), req.dbUser.id]
+    );
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 module.exports = router;

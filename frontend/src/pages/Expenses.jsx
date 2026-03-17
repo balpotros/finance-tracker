@@ -1,191 +1,162 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
-import { getExpenses, createExpense, updateExpense, deleteExpense } from '../api';
-import { UserContext } from '../components/Layout';
-import TransactionModal from '../components/TransactionModal';
+import { useState, useEffect, useCallback } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
+import { getExpenses, addExpense, deleteExpense, getCategories } from '../api.js'
 
-const CATEGORIES = ['Bills','Car','Clothes','Entertainment','Food','Other','Sadaf','Vacation','Self Improve','House','Subscription','Work','Health','Gift'];
+const fmt = n => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
 
-function fmt(n) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-}
+const DEFAULT_EXPENSE_CATEGORIES = ['Bills','Car','Clothes','Entertainment','Food','Other','Vacation','House','Subscription','Work','Health','Gift']
 
 export default function Expenses() {
-  const profile = useContext(UserContext);
-  const myId    = profile?.user?.id;
+  const { getAccessTokenSilently } = useAuth0()
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const [filterFrom, setFilterFrom] = useState('')
+  const [filterTo, setFilterTo] = useState('')
+  const [search, setSearch] = useState('')
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], description: '', amount: '', category: '', notes: '' })
+  const [expenseCategories, setExpenseCategories] = useState(DEFAULT_EXPENSE_CATEGORIES)
 
-  const now = new Date();
-  const [startDate, setStartDate] = useState(format(startOfMonth(now), 'yyyy-MM-dd'));
-  const [endDate, setEndDate]     = useState(format(endOfMonth(now), 'yyyy-MM-dd'));
-  const [category, setCategory]   = useState('');
-  const [search, setSearch]       = useState('');
-  const [sortBy, setSortBy]       = useState('date');
-  const [sortDir, setSortDir]     = useState('desc');
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const token = await getAccessTokenSilently()
+      const [data, cats] = await Promise.all([
+        getExpenses(token, filterFrom || undefined, filterTo || undefined),
+        getCategories(token).catch(() => null)
+      ])
+      setRows(data)
+      if (cats?.expense?.length) setExpenseCategories(cats.expense)
+    } catch (e) { setError(e.message) }
+    finally { setLoading(false) }
+  }, [getAccessTokenSilently, filterFrom, filterTo])
 
-  const [rows, setRows]           = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
+  useEffect(() => { load() }, [load])
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing]     = useState(null);
-  const [deleteId, setDeleteId]   = useState(null);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    getExpenses({ start_date: startDate, end_date: endDate, category: category || undefined, search: search || undefined, sort_by: sortBy, sort_dir: sortDir })
-      .then(setRows)
-      .catch(() => setError('Failed to load expenses'))
-      .finally(() => setLoading(false));
-  }, [startDate, endDate, category, search, sortBy, sortDir]);
-
-  useEffect(() => { load(); }, [load]);
-
-  function toggleSort(col) {
-    if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortBy(col); setSortDir('asc'); }
+  const handleSubmit = async e => {
+    e.preventDefault()
+    if (!form.date || !form.amount) return
+    setSaving(true)
+    try {
+      const token = await getAccessTokenSilently()
+      await addExpense(token, { ...form, amount: parseFloat(form.amount) })
+      setForm({ date: new Date().toISOString().split('T')[0], description: '', amount: '', category: '', notes: '' })
+      setShowForm(false)
+      load()
+    } catch (e) { setError(e.message) }
+    finally { setSaving(false) }
   }
 
-  function SortIcon({ col }) {
-    if (sortBy !== col) return <span className="text-gray-300 ml-1">↕</span>;
-    return <span className="text-blue-500 ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+  const handleDelete = async id => {
+    if (!confirm('Delete this expense?')) return
+    try {
+      const token = await getAccessTokenSilently()
+      await deleteExpense(token, id)
+      setRows(r => r.filter(x => x.id !== id))
+    } catch (e) { setError(e.message) }
   }
 
-  async function handleSave(form) {
-    if (editing) await updateExpense(editing.id, form);
-    else await createExpense(form);
-    load();
-  }
-
-  async function handleDelete(id) {
-    await deleteExpense(id);
-    setDeleteId(null);
-    load();
-  }
-
-  const total = rows.filter(r => !r.hidden).reduce((s, r) => s + parseFloat(r.amount), 0);
+  const filtered = rows.filter(r =>
+    !search || r.description?.toLowerCase().includes(search.toLowerCase()) || r.category?.toLowerCase().includes(search.toLowerCase())
+  )
+  const total = filtered.reduce((s, r) => s + parseFloat(r.amount), 0)
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <h1 className="text-2xl font-bold text-gray-900 flex-1">Expenses</h1>
-        <button className="btn-primary" onClick={() => { setEditing(null); setModalOpen(true); }}>
-          + New Expense
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-gray-800">Expenses</h1>
+        <button onClick={() => setShowForm(!showForm)} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
+          {showForm ? 'Cancel' : '+ Add Expense'}
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="card">
-        <div className="flex flex-wrap gap-3 items-end">
-          <div>
-            <label className="label">From</label>
-            <input type="date" className="input" value={startDate} onChange={e => setStartDate(e.target.value)} />
-          </div>
-          <div>
-            <label className="label">To</label>
-            <input type="date" className="input" value={endDate} onChange={e => setEndDate(e.target.value)} />
-          </div>
-          <div>
-            <label className="label">Category</label>
-            <select className="input" value={category} onChange={e => setCategory(e.target.value)}>
-              <option value="">All</option>
-              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="flex-1 min-w-[180px]">
-            <label className="label">Search vendor</label>
-            <input type="text" className="input" placeholder="Search…" value={search}
-              onChange={e => setSearch(e.target.value)} />
-          </div>
-          <button className="btn-secondary" onClick={() => { setCategory(''); setSearch(''); }}>Clear</button>
-        </div>
-      </div>
+      {error && <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-sm">{error} <button onClick={() => setError(null)} className="ml-2 font-bold">✕</button></div>}
 
-      {/* Total */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{rows.length} entries</p>
-        <p className="font-semibold text-gray-900">Total: <span className="text-red-500">{fmt(total)}</span></p>
-      </div>
-
-      {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg">{error}</div>}
-
-      {/* Table */}
-      <div className="card p-0 overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>
-              <th className="table-th cursor-pointer hover:text-gray-900" onClick={() => toggleSort('date')}>
-                Date <SortIcon col="date" />
-              </th>
-              <th className="table-th cursor-pointer hover:text-gray-900" onClick={() => toggleSort('vendor')}>
-                Vendor <SortIcon col="vendor" />
-              </th>
-              <th className="table-th cursor-pointer hover:text-gray-900 text-right" onClick={() => toggleSort('amount')}>
-                Amount <SortIcon col="amount" />
-              </th>
-              <th className="table-th cursor-pointer hover:text-gray-900" onClick={() => toggleSort('category')}>
-                Category <SortIcon col="category" />
-              </th>
-              <th className="table-th">Notes</th>
-              <th className="table-th">By</th>
-              <th className="table-th">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {loading ? (
-              <tr><td colSpan={7} className="text-center py-12 text-gray-400">Loading…</td></tr>
-            ) : rows.length === 0 ? (
-              <tr><td colSpan={7} className="text-center py-12 text-gray-400">No expenses found.</td></tr>
-            ) : rows.map(row => (
-              <tr key={row.id} className={`hover:bg-gray-50 ${row.hidden ? 'opacity-50' : ''}`}>
-                <td className="table-td text-gray-500">{row.date}</td>
-                <td className="table-td font-medium">{row.vendor}</td>
-                <td className="table-td text-right font-semibold text-red-500">{fmt(row.amount)}</td>
-                <td className="table-td">
-                  <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs">{row.category}</span>
-                  {row.hidden && <span className="ml-1 px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">hidden</span>}
-                </td>
-                <td className="table-td text-gray-500 max-w-[180px] truncate">{row.notes}</td>
-                <td className="table-td text-gray-500">{row.user_name}</td>
-                <td className="table-td">
-                  {row.user_id === myId ? (
-                    <div className="flex gap-2">
-                      <button className="text-blue-500 hover:text-blue-700 text-xs font-medium"
-                        onClick={() => { setEditing(row); setModalOpen(true); }}>Edit</button>
-                      <button className="text-red-500 hover:text-red-700 text-xs font-medium"
-                        onClick={() => setDeleteId(row.id)}>Delete</button>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-gray-400 italic">read-only</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <TransactionModal
-        open={modalOpen}
-        onClose={() => { setModalOpen(false); setEditing(null); }}
-        onSave={handleSave}
-        initial={editing}
-        type="expense"
-        currentUserId={myId}
-      />
-
-      {/* Delete confirm */}
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-4">
-            <h3 className="font-bold text-gray-900">Delete expense?</h3>
-            <p className="text-sm text-gray-500">This action cannot be undone.</p>
-            <div className="flex gap-3">
-              <button className="btn-secondary flex-1 justify-center" onClick={() => setDeleteId(null)}>Cancel</button>
-              <button className="btn-danger flex-1 justify-center" onClick={() => handleDelete(deleteId)}>Delete</button>
+      {showForm && (
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl p-5 shadow-sm space-y-3">
+          <h2 className="font-semibold text-gray-700">New Expense</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Date *</label>
+              <input type="date" value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} required className="w-full border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Amount *</label>
+              <input type="number" step="0.01" min="0" placeholder="0.00" value={form.amount} onChange={e => setForm(f => ({...f, amount: e.target.value}))} required className="w-full border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Description</label>
+              <input type="text" placeholder="e.g. Grocery run" value={form.description} onChange={e => setForm(f => ({...f, description: e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Category</label>
+              <select value={form.category} onChange={e => setForm(f => ({...f, category: e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm">
+                <option value="">Select category</option>
+                {expenseCategories.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-xs text-gray-500 block mb-1">Notes</label>
+              <input type="text" placeholder="Optional notes" value={form.notes} onChange={e => setForm(f => ({...f, notes: e.target.value}))} className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
           </div>
+          <button type="submit" disabled={saving} className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors">
+            {saving ? 'Saving...' : 'Save Expense'}
+          </button>
+        </form>
+      )}
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl p-4 shadow-sm flex flex-wrap gap-3 items-center">
+        <input type="text" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm flex-1 min-w-32" />
+        <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm" />
+        <span className="text-gray-400 text-sm">to</span>
+        <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm" />
+        <button onClick={load} className="bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg text-sm transition-colors">Filter</button>
+        {(filterFrom || filterTo) && <button onClick={() => { setFilterFrom(''); setFilterTo('') }} className="text-sm text-gray-400 hover:text-red-500">Clear</button>}
+        <span className="ml-auto text-sm font-semibold text-red-600">{fmt(total)} total</span>
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div></div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <div className="text-4xl mb-3">💸</div>
+          <p>No expenses found</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="text-left px-4 py-3 text-gray-500 font-medium">Date</th>
+                <th className="text-left px-4 py-3 text-gray-500 font-medium">Description</th>
+                <th className="text-left px-4 py-3 text-gray-500 font-medium hidden sm:table-cell">Category</th>
+                <th className="text-right px-4 py-3 text-gray-500 font-medium">Amount</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {filtered.map(r => (
+                <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-gray-500">{r.date}</td>
+                  <td className="px-4 py-3 font-medium">{r.description || '—'}{r.notes && <span className="block text-xs text-gray-400">{r.notes}</span>}</td>
+                  <td className="px-4 py-3 hidden sm:table-cell">
+                    {r.category && <span className="bg-red-50 text-red-600 text-xs px-2 py-0.5 rounded-full">{r.category}</span>}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-red-600">{fmt(r.amount)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => handleDelete(r.id)} className="text-gray-300 hover:text-red-500 transition-colors text-lg leading-none">✕</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
-  );
+  )
 }

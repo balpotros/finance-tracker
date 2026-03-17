@@ -1,207 +1,256 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
+import { getSummary, getTrend, addExpense, addIncome, getCategories } from '../api.js'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell, Sector,
-} from 'recharts';
-import { getDashboard } from '../api';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, PieChart, Pie, Cell
+} from 'recharts'
 
-const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#6366f1','#14b8a6','#a855f7'];
+const COLORS = ['#22c55e','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1']
 
-function fmt(n) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
-}
+const fmt = n => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
-function SummaryCard({ label, value, sub, color }) {
+function StatCard({ label, value, color, sub }) {
   return (
-    <div className="card flex flex-col gap-1">
-      <p className="text-sm font-medium text-gray-500">{label}</p>
-      <p className={`text-2xl font-bold ${color || 'text-gray-900'}`}>{value}</p>
-      {sub && <p className="text-xs text-gray-400">{sub}</p>}
+    <div className={`bg-white rounded-xl p-5 border-l-4 shadow-sm ${color}`}>
+      <p className="text-sm text-gray-500 mb-1">{label}</p>
+      <p className="text-2xl font-bold">{value}</p>
+      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
     </div>
-  );
+  )
 }
 
-const renderActiveShape = (props) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
+function QuickAdd({ onAdded }) {
+  const { getAccessTokenSilently } = useAuth0()
+  const [type, setType] = useState('expense')
+  const [amount, setAmount] = useState('')
+  const [description, setDescription] = useState('')
+  const [category, setCategory] = useState('')
+  const [categories, setCategories] = useState({ expense: [], income: [] })
+  const [saving, setSaving] = useState(false)
+  const [flash, setFlash] = useState(null)
+
+  useEffect(() => {
+    getAccessTokenSilently()
+      .then(t => getCategories(t))
+      .then(c => setCategories(c))
+      .catch(() => {})
+  }, [getAccessTokenSilently])
+
+  const handleSubmit = async e => {
+    e.preventDefault()
+    if (!amount) return
+    setSaving(true)
+    try {
+      const token = await getAccessTokenSilently()
+      const data = { date: new Date().toISOString().split('T')[0], description, amount: parseFloat(amount), category }
+      if (type === 'expense') await addExpense(token, data)
+      else await addIncome(token, data)
+      setAmount('')
+      setDescription('')
+      setCategory('')
+      setFlash(type === 'expense' ? '💸 Expense added!' : '💰 Income added!')
+      setTimeout(() => setFlash(null), 2500)
+      if (onAdded) onAdded()
+    } catch (e) {
+      setFlash('Error: ' + e.message)
+      setTimeout(() => setFlash(null), 3000)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const cats = type === 'expense' ? categories.expense : categories.income
+
   return (
-    <g>
-      <text x={cx} y={cy - 10} textAnchor="middle" fill="#111" className="text-sm font-semibold" fontSize={14}>
-        {payload.category}
-      </text>
-      <text x={cx} y={cy + 14} textAnchor="middle" fill="#555" fontSize={13}>
-        {fmt(value)}
-      </text>
-      <text x={cx} y={cy + 32} textAnchor="middle" fill="#999" fontSize={11}>
-        {(percent * 100).toFixed(1)}%
-      </text>
-      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8}
-        startAngle={startAngle} endAngle={endAngle} fill={fill} />
-      <Sector cx={cx} cy={cy} innerRadius={outerRadius + 10} outerRadius={outerRadius + 14}
-        startAngle={startAngle} endAngle={endAngle} fill={fill} />
-    </g>
-  );
-};
+    <div className="bg-white rounded-xl p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-semibold text-gray-700 text-sm">Quick Add</h2>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setType('expense')}
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${type === 'expense' ? 'bg-red-100 text-red-700' : 'text-gray-500 hover:bg-gray-100'}`}
+          >💸 Expense</button>
+          <button
+            onClick={() => setType('income')}
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${type === 'income' ? 'bg-green-100 text-green-700' : 'text-gray-500 hover:bg-gray-100'}`}
+          >💰 Income</button>
+        </div>
+      </div>
+      {flash && (
+        <div className={`text-xs px-3 py-1.5 rounded-lg mb-2 ${flash.startsWith('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>{flash}</div>
+      )}
+      <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 items-end">
+        <div className="flex-1 min-w-24">
+          <label className="text-xs text-gray-400 block mb-1">Amount *</label>
+          <input
+            type="number" step="0.01" min="0" placeholder="0.00"
+            value={amount} onChange={e => setAmount(e.target.value)} required
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="flex-1 min-w-28">
+          <label className="text-xs text-gray-400 block mb-1">Description</label>
+          <input
+            type="text" placeholder="e.g. Coffee"
+            value={description} onChange={e => setDescription(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="flex-1 min-w-28">
+          <label className="text-xs text-gray-400 block mb-1">Category</label>
+          <select value={category} onChange={e => setCategory(e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm">
+            <option value="">— none —</option>
+            {cats.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <button
+          type="submit" disabled={saving || !amount}
+          className={`px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50 transition-colors ${type === 'expense' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'}`}
+        >
+          {saving ? '...' : 'Add'}
+        </button>
+      </form>
+    </div>
+  )
+}
 
 export default function Dashboard() {
-  const now = new Date();
-  const [startDate, setStartDate] = useState(format(startOfMonth(subMonths(now, 5)), 'yyyy-MM-dd'));
-  const [endDate, setEndDate]   = useState(format(endOfMonth(now), 'yyyy-MM-dd'));
-  const [data, setData]         = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
-  const [activeIndex, setActiveIndex] = useState(0);
+  const { getAccessTokenSilently } = useAuth0()
+  const [summary, setSummary] = useState(null)
+  const [trend, setTrend] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const load = useCallback(() => {
-    setLoading(true);
-    getDashboard({ start_date: startDate, end_date: endDate })
-      .then(setData)
-      .catch(() => setError('Failed to load dashboard'))
-      .finally(() => setLoading(false));
-  }, [startDate, endDate]);
+  const now = new Date()
+  const [from, setFrom] = useState(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`)
+  const [to, setTo] = useState(now.toISOString().split('T')[0])
 
-  useEffect(() => { load(); }, [load]);
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const token = await getAccessTokenSilently()
+      const [s, t] = await Promise.all([getSummary(token, from, to), getTrend(token, 12)])
+      setSummary(s)
+      setTrend(t)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [getAccessTokenSilently, from, to])
 
-  const presets = [
-    { label: 'This Month', start: format(startOfMonth(now), 'yyyy-MM-dd'), end: format(endOfMonth(now), 'yyyy-MM-dd') },
-    { label: 'Last Month', start: format(startOfMonth(subMonths(now,1)), 'yyyy-MM-dd'), end: format(endOfMonth(subMonths(now,1)), 'yyyy-MM-dd') },
-    { label: 'Last 3M',   start: format(startOfMonth(subMonths(now,2)), 'yyyy-MM-dd'), end: format(endOfMonth(now), 'yyyy-MM-dd') },
-    { label: 'Last 6M',   start: format(startOfMonth(subMonths(now,5)), 'yyyy-MM-dd'), end: format(endOfMonth(now), 'yyyy-MM-dd') },
-    { label: 'This Year', start: `${now.getFullYear()}-01-01`, end: `${now.getFullYear()}-12-31` },
-  ];
+  useEffect(() => { load() }, [load])
+
+  // Merge trend data
+  const trendData = (() => {
+    if (!trend) return []
+    const map = {}
+    trend.expenses.forEach(r => { map[r.month] = { month: r.month, Expenses: parseFloat(r.total) } })
+    trend.income.forEach(r => { if (map[r.month]) map[r.month].Income = parseFloat(r.total); else map[r.month] = { month: r.month, Income: parseFloat(r.total) } })
+    return Object.values(map).sort((a,b) => a.month.localeCompare(b.month))
+  })()
+
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div></div>
+  if (error) return <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">{error}</div>
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <h1 className="text-2xl font-bold text-gray-900 flex-1">Dashboard</h1>
+      {/* Quick Add */}
+      <QuickAdd onAdded={load} />
 
-        {/* Date range */}
-        <div className="flex flex-wrap items-center gap-2">
-          {presets.map((p) => (
-            <button key={p.label}
-              onClick={() => { setStartDate(p.start); setEndDate(p.end); }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                startDate === p.start && endDate === p.end
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-              }`}
-            >{p.label}</button>
-          ))}
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="input w-36" />
-          <span className="text-gray-400">–</span>
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="input w-36" />
-        </div>
+      {/* Date filter */}
+      <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-xl shadow-sm">
+        <span className="text-sm font-medium text-gray-600">Period:</span>
+        <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm" />
+        <span className="text-gray-400">to</span>
+        <input type="date" value={to} onChange={e => setTo(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm" />
+        <button onClick={load} className="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">Apply</button>
       </div>
 
-      {loading && <div className="text-center py-16 text-gray-400">Loading...</div>}
-      {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg">{error}</div>}
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard label="Total Income" value={fmt(summary.total_income)} color="border-green-500" sub={`${summary.income_count} transactions`} />
+        <StatCard label="Total Expenses" value={fmt(summary.total_expenses)} color="border-red-400" sub={`${summary.expense_count} transactions`} />
+        <StatCard
+          label="Balance"
+          value={fmt(summary.balance)}
+          color={summary.balance >= 0 ? 'border-blue-500' : 'border-orange-400'}
+          sub={summary.balance >= 0 ? 'In the green' : 'Deficit'}
+        />
+      </div>
 
-      {data && (
-        <>
-          {/* Summary cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <SummaryCard label="Total Income" value={fmt(data.summary.totalIncome)} color="text-green-600" />
-            <SummaryCard label="Total Expenses" value={fmt(data.summary.totalExpenses)} color="text-red-500" />
-            <SummaryCard label="Total Savings" value={fmt(data.summary.totalSavings)}
-              color={data.summary.totalSavings >= 0 ? 'text-blue-600' : 'text-red-600'} />
-            <SummaryCard label="Savings Rate" value={`${data.summary.savingsRate.toFixed(1)}%`}
-              color={data.summary.savingsRate >= 20 ? 'text-green-600' : data.summary.savingsRate >= 0 ? 'text-yellow-600' : 'text-red-600'}
-              sub="of total income" />
+      {/* Trend chart */}
+      {trendData.length > 0 && (
+        <div className="bg-white rounded-xl p-5 shadow-sm">
+          <h2 className="font-semibold text-gray-700 mb-4">Monthly Trend (12 months)</h2>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={trendData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+              <Tooltip formatter={(v) => fmt(v)} />
+              <Legend />
+              <Bar dataKey="Income" fill="#22c55e" radius={[4,4,0,0]} />
+              <Bar dataKey="Expenses" fill="#f87171" radius={[4,4,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Category breakdowns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {summary.expenses_by_category.length > 0 && (
+          <div className="bg-white rounded-xl p-5 shadow-sm">
+            <h2 className="font-semibold text-gray-700 mb-4">Expenses by Category</h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={summary.expenses_by_category} dataKey="total" nameKey="category" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name || 'Other'} ${(percent*100).toFixed(0)}%`} labelLine={false}>
+                  {summary.expenses_by_category.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip formatter={v => fmt(v)} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-
-          {/* Monthly bar chart + Pie chart */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div className="card">
-              <h2 className="font-semibold text-gray-900 mb-4">Monthly Overview</h2>
-              {data.monthly.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-8">No data for selected period</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={data.monthly} margin={{ left: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                    <YAxis tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
-                    <Tooltip formatter={(v) => fmt(v)} />
-                    <Legend />
-                    <Bar dataKey="income"   name="Income"   fill="#10b981" radius={[4,4,0,0]} />
-                    <Bar dataKey="expenses" name="Expenses" fill="#ef4444" radius={[4,4,0,0]} />
-                    <Bar dataKey="savings"  name="Savings"  fill="#3b82f6" radius={[4,4,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-
-            <div className="card">
-              <h2 className="font-semibold text-gray-900 mb-4">Expenses by Category</h2>
-              {data.expensesByCategory.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-8">No expenses for selected period</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <Pie
-                      activeIndex={activeIndex}
-                      activeShape={renderActiveShape}
-                      data={data.expensesByCategory}
-                      dataKey="total"
-                      nameKey="category"
-                      cx="50%" cy="50%"
-                      innerRadius={70} outerRadius={100}
-                      onMouseEnter={(_, i) => setActiveIndex(i)}
-                    >
-                      {data.expensesByCategory.map((_, i) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </div>
+        )}
+        {summary.income_by_category.length > 0 && (
+          <div className="bg-white rounded-xl p-5 shadow-sm">
+            <h2 className="font-semibold text-gray-700 mb-4">Income by Category</h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={summary.income_by_category} dataKey="total" nameKey="category" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name || 'Other'} ${(percent*100).toFixed(0)}%`} labelLine={false}>
+                  {summary.income_by_category.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip formatter={v => fmt(v)} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
+        )}
+      </div>
 
-          {/* Recent transactions */}
-          <div className="card">
-            <h2 className="font-semibold text-gray-900 mb-4">Recent Transactions</h2>
-            {data.recentTransactions.length === 0 ? (
-              <p className="text-gray-400 text-sm text-center py-8">No transactions for selected period</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="table-th">Date</th>
-                      <th className="table-th">Description</th>
-                      <th className="table-th">Category</th>
-                      <th className="table-th">Type</th>
-                      <th className="table-th">By</th>
-                      <th className="table-th text-right">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {data.recentTransactions.map((t) => (
-                      <tr key={`${t.type}-${t.id}`} className="hover:bg-gray-50">
-                        <td className="table-td text-gray-500">{t.date}</td>
-                        <td className="table-td font-medium">{t.vendor}</td>
-                        <td className="table-td">
-                          <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs">{t.category}</span>
-                        </td>
-                        <td className="table-td">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            t.type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                          }`}>{t.type}</span>
-                        </td>
-                        <td className="table-td text-gray-500">{t.user_name}</td>
-                        <td className={`table-td text-right font-semibold ${
-                          t.type === 'income' ? 'text-green-600' : 'text-red-500'
-                        }`}>{t.type === 'income' ? '+' : '-'}{fmt(t.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+      {/* Recent */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[['Recent Expenses', summary.recent_expenses, 'text-red-500'], ['Recent Income', summary.recent_income, 'text-green-600']].map(([title, rows, cls]) => (
+          <div key={title} className="bg-white rounded-xl p-5 shadow-sm">
+            <h2 className="font-semibold text-gray-700 mb-3">{title}</h2>
+            {rows.length === 0 ? <p className="text-gray-400 text-sm">No entries yet</p> : (
+              <div className="space-y-2">
+                {rows.map(r => (
+                  <div key={r.id} className="flex justify-between items-center text-sm">
+                    <div>
+                      <span className="font-medium">{r.description || '—'}</span>
+                      {r.category && <span className="ml-2 text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{r.category}</span>}
+                      <span className="block text-xs text-gray-400">{r.date}</span>
+                    </div>
+                    <span className={`font-semibold ${cls}`}>{fmt(r.amount)}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </>
-      )}
+        ))}
+      </div>
     </div>
-  );
+  )
 }
