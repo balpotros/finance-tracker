@@ -18,7 +18,7 @@ function fmtDate(dateStr) {
 
 const emptyForm = () => ({
   date: new Date().toISOString().split('T')[0],
-  description: '',
+  source: '',
   amount: '',
   category: '',
   notes: '',
@@ -115,9 +115,9 @@ export default function Income() {
                 </div>
               </div>
               <div>
-                <label className="label">Description</label>
-                <input type="text" className="input" value={form.description}
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                <label className="label">Source</label>
+                <input type="text" className="input" value={form.source}
+                  onChange={e => setForm(f => ({ ...f, source: e.target.value }))} />
               </div>
               <div>
                 <label className="label">Category</label>

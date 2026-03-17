@@ -22,7 +22,7 @@ export const getTrend = (token, months = 12) =>
   apiFetch(`/api/trend?months=${months}`, token)
 
 export const getExpenses = (token, from, to) =>
-  apiFetch(`/api/expenses${from ? `?from=${from}&to=${to}&limit=1000` : '?limit=1000'}`, token)
+  apiFetch(`/api/expenses${from ? `?start_date=${from}&end_date=${to}&limit=1000` : '?limit=1000'}`, token)
 
 export const addExpense = (token, data) =>
   apiFetch('/api/expenses', token, {
@@ -35,7 +35,7 @@ export const deleteExpense = (token, id) =>
   apiFetch(`/api/expenses/${id}`, token, { method: 'DELETE' })
 
 export const getIncome = (token, from, to) =>
-  apiFetch(`/api/income${from ? `?from=${from}&to=${to}&limit=1000` : '?limit=1000'}`, token)
+  apiFetch(`/api/income${from ? `?start_date=${from}&end_date=${to}&limit=1000` : '?limit=1000'}`, token)
 
 export const addIncome = (token, data) =>
   apiFetch('/api/income', token, {
