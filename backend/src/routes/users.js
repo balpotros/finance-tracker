@@ -29,7 +29,7 @@ router.post('/household', async (req, res) => {
     const hh = await db.query(
       `INSERT INTO households DEFAULT VALUES RETURNING *`
     );
-    await db.query(`UPDATE users SET household_id = $1 WHERE id = $2`, [
+    await db.query(`UPDATE users SET household_id = $1, household_role = 'admin' WHERE id = $2`, [
       hh.rows[0].id,
       user.id,
     ]);
@@ -49,16 +49,36 @@ router.post('/household', async (req, res) => {
       return res.status(400).json({ error: 'Household already has 2 members' });
     }
 
-    await db.query(`UPDATE users SET household_id = $1 WHERE id = $2`, [household_id, user.id]);
+    await db.query(`UPDATE users SET household_id = $1, household_role = 'member' WHERE id = $2`, [household_id, user.id]);
     return res.json({ household: hh.rows[0] });
   }
 
   if (action === 'leave') {
-    await db.query(`UPDATE users SET household_id = NULL WHERE id = $1`, [user.id]);
+    await db.query(`UPDATE users SET household_id = NULL, household_role = NULL WHERE id = $1`, [user.id]);
     return res.json({ ok: true });
   }
 
   res.status(400).json({ error: 'Invalid action' });
+});
+
+// PATCH /api/users/household — rename household (admin only)
+router.patch('/household', async (req, res) => {
+  const { name } = req.body;
+  const user = req.dbUser;
+  if (!user.household_id) return res.status(400).json({ error: 'Not in a household' });
+  if (user.household_role !== 'admin') return res.status(403).json({ error: 'Only admin can rename' });
+  if (!name?.trim()) return res.status(400).json({ error: 'Name required' });
+
+  try {
+    const hh = await db.query(
+      `UPDATE households SET name = $1 WHERE id = $2 RETURNING *`,
+      [name.trim(), user.household_id]
+    );
+    res.json({ household: hh.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // PATCH /api/users/me — update display name
