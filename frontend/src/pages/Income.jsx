@@ -187,7 +187,7 @@ export default function Income() {
             ) : filtered.map(row => (
               <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                 <td className="table-td text-gray-500 whitespace-nowrap">{fmtDate(row.date)}</td>
-                <td className="table-td font-medium">{row.description || '---'}</td>
+                <td className="table-td font-medium">{row.source || '---'}</td>
                 <td className="table-td text-right font-semibold text-green-600 whitespace-nowrap">{fmt(row.amount)}</td>
                 <td className="table-td">
                   {row.category && <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs">{row.category}</span>}
