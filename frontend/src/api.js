@@ -12,6 +12,7 @@ export async function apiFetch(path, token, options = {}) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
     throw new Error(err.error || res.statusText)
   }
+  if (res.status === 204) return null
   return res.json()
 }
 
