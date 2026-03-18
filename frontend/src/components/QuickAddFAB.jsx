@@ -27,7 +27,7 @@ export default function QuickAddFAB() {
     if (!open) return
     getAccessTokenSilently()
       .then(t => getSuggestions(t, type))
-      .then(data => setSuggestions(data.suggestions || []))
+      .then(data => setSuggestions(Array.isArray(data) ? data : (data.suggestions || [])))
       .catch(() => setSuggestions([]))
   }, [open, type, getAccessTokenSilently])
 
