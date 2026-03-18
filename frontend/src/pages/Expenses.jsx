@@ -82,9 +82,16 @@ export default function Expenses() {
     } catch (e) { setError(e.message) }
   }
 
-  const filtered = rows.filter(r =>
-    !search || r.description?.toLowerCase().includes(search.toLowerCase()) || r.category?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = rows.filter(r => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      r.vendor?.toLowerCase().includes(q) ||
+      r.category?.toLowerCase().includes(q) ||
+      r.notes?.toLowerCase().includes(q) ||
+      String(r.amount).includes(q)
+    )
+  })
   const total = filtered.reduce((s, r) => s + parseFloat(r.amount), 0)
 
   return (

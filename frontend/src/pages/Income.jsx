@@ -52,7 +52,7 @@ export default function Income() {
       ])
       setRows(data)
       if (cats?.income?.length) setCategories(cats.income)
-      setSuggestions(Array.isArray(sugg) ? sugg : (sugg?.suggestions || []))
+      setSuggestions(sugg || [])
     } catch (e) { setError(e.message) }
     finally { setLoading(false) }
   }, [getAccessTokenSilently, filterFrom, filterTo])
@@ -88,6 +88,7 @@ export default function Income() {
     return (
       r.source?.toLowerCase().includes(q) ||
       r.category?.toLowerCase().includes(q) ||
+      r.notes?.toLowerCase().includes(q) ||
       String(r.amount).includes(q)
     )
   })
@@ -172,7 +173,7 @@ export default function Income() {
           <div className="flex gap-2 sm:flex-1">
             <div className="flex-1 min-w-0">
               <label className="label">Search</label>
-              <input type="text" className="input" placeholder="Search by source, category, amount..." value={search} onChange={e => setSearch(e.target.value)} />
+              <input type="text" className="input" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <div className="flex items-end">
               <button className="btn-secondary" onClick={() => setSearch('')}>Clear</button>
