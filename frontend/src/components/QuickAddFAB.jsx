@@ -8,7 +8,7 @@ export default function QuickAddFAB() {
   const [open, setOpen] = useState(false)
   const [type, setType] = useState('expense')
   const [amount, setAmount] = useState('')
-  const [description, setDescription] = useState('')
+  const [vendorSource, setVendorSource] = useState('')
   const [category, setCategory] = useState('')
   const [categories, setCategories] = useState({ expense: [], income: [] })
   const [suggestions, setSuggestions] = useState([])
@@ -42,7 +42,7 @@ export default function QuickAddFAB() {
 
   const reset = () => {
     setAmount('')
-    setDescription('')
+    setVendorSource('')
     setCategory('')
     setDate(new Date().toISOString().split('T')[0])
     setFlash(null)
@@ -56,16 +56,13 @@ export default function QuickAddFAB() {
 
   const handleSubmit = async e => {
     e.preventDefault()
-    if (!amount) return
+    if (!amount || !category || !vendorSource) return
     setSaving(true)
     try {
       const token = await getAccessTokenSilently()
-      const data = {
-        date,
-        description,
-        amount: parseFloat(amount),
-        category,
-      }
+      const data = type === 'expense'
+        ? { date, vendor: vendorSource, amount: parseFloat(amount), category }
+        : { date, source: vendorSource, amount: parseFloat(amount), category }
       if (type === 'expense') await addExpense(token, data)
       else await addIncome(token, data)
       setFlash({ ok: true, msg: type === 'expense' ? 'Expense added!' : 'Income added!' })
@@ -186,25 +183,26 @@ export default function QuickAddFAB() {
 
               {/* Category */}
               <div>
-                <label className="text-xs text-gray-400 block mb-1.5">Category</label>
+                <label className="text-xs text-gray-400 block mb-1.5">Category *</label>
                 <select
                   value={category}
                   onChange={e => setCategory(e.target.value)}
+                  required
                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 transition-colors"
                 >
-                  <option value="">— none —</option>
+                  <option value="">— select —</option>
                   {cats.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
 
-              {/* Description */}
+              {/* Vendor / Source */}
               <div>
-                <label className="text-xs text-gray-400 block mb-1.5">Description</label>
+                <label className="text-xs text-gray-400 block mb-1.5">{type === 'expense' ? 'Vendor *' : 'Source *'}</label>
                 <AutocompleteInput
-                  value={description}
-                  onChange={setDescription}
+                  value={vendorSource}
+                  onChange={setVendorSource}
                   suggestions={suggestions}
-                  placeholder="e.g. Coffee, Salary..."
+                  placeholder={type === 'expense' ? 'e.g. Starbucks, Amazon...' : 'e.g. Salary, Freelance...'}
                   className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 transition-colors"
                 />
               </div>
@@ -212,7 +210,7 @@ export default function QuickAddFAB() {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={saving || !amount}
+                disabled={saving || !amount || !category || !vendorSource}
                 className={`w-full py-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40 ${
                   type === 'expense'
                     ? 'bg-red-500 hover:bg-red-400'
