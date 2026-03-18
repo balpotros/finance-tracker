@@ -12,6 +12,7 @@ export default function QuickAddFAB() {
   const [category, setCategory] = useState('')
   const [categories, setCategories] = useState({ expense: [], income: [] })
   const [suggestions, setSuggestions] = useState([])
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [saving, setSaving] = useState(false)
   const [flash, setFlash] = useState(null)
 
@@ -43,6 +44,7 @@ export default function QuickAddFAB() {
     setAmount('')
     setDescription('')
     setCategory('')
+    setDate(new Date().toISOString().split('T')[0])
     setFlash(null)
     setType('expense')
   }
@@ -59,7 +61,7 @@ export default function QuickAddFAB() {
     try {
       const token = await getAccessTokenSilently()
       const data = {
-        date: new Date().toISOString().split('T')[0],
+        date,
         description,
         amount: parseFloat(amount),
         category,
@@ -154,6 +156,18 @@ export default function QuickAddFAB() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Date */}
+              <div>
+                <label className="text-xs text-gray-400 block mb-1.5">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  required
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 transition-colors"
+                />
+              </div>
+
               {/* Amount */}
               <div>
                 <label className="text-xs text-gray-400 block mb-1.5">Amount *</label>
