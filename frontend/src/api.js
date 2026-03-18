@@ -89,4 +89,4 @@ export const deleteCategory = (token, data) =>
   })
 
 export const getSuggestions = (token, type) =>
-  apiFetch(`/api/suggestions?type=${type}`, token)
+  apiFetch(`/api/transactions/suggestions?type=${type}`, token)
