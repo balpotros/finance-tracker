@@ -52,7 +52,7 @@ export default function Income() {
       ])
       setRows(data)
       if (cats?.income?.length) setCategories(cats.income)
-      setSuggestions(sugg || [])
+      setSuggestions(Array.isArray(sugg) ? sugg : (sugg?.suggestions || []))
     } catch (e) { setError(e.message) }
     finally { setLoading(false) }
   }, [getAccessTokenSilently, filterFrom, filterTo])
@@ -82,9 +82,15 @@ export default function Income() {
     } catch (e) { setError(e.message) }
   }
 
-  const filtered = rows.filter(r =>
-    !search || r.description?.toLowerCase().includes(search.toLowerCase()) || r.category?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = rows.filter(r => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      r.source?.toLowerCase().includes(q) ||
+      r.category?.toLowerCase().includes(q) ||
+      String(r.amount).includes(q)
+    )
+  })
   const total = filtered.reduce((s, r) => s + parseFloat(r.amount), 0)
 
   return (
@@ -166,7 +172,7 @@ export default function Income() {
           <div className="flex gap-2 sm:flex-1">
             <div className="flex-1 min-w-0">
               <label className="label">Search</label>
-              <input type="text" className="input" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+              <input type="text" className="input" placeholder="Search by source, category, amount..." value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <div className="flex items-end">
               <button className="btn-secondary" onClick={() => setSearch('')}>Clear</button>
