@@ -49,8 +49,8 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
         <div className="bg-white rounded-2xl shadow-xl p-10 max-w-sm w-full mx-4 text-center">
-          <div className="text-5xl mb-4">💼</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Finance Tracker</h1>
+          <div className="text-5xl mb-4">📈</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Kashboard</h1>
           <p className="text-gray-500 mb-8">Track your income and expenses in one place.</p>
           <button
             onClick={() => loginWithRedirect({ connection: 'google-oauth2' })}
@@ -78,7 +78,7 @@ export default function App() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
           <div className="flex items-center gap-6">
-            <span className="font-bold text-green-600 text-lg">💼 Finance</span>
+            <span className="font-bold text-emerald-600 text-lg flex items-center gap-1.5">📈 Kashboard</span>
             <nav className="hidden sm:flex gap-1">
               {NAV.map(n => (
                 <button

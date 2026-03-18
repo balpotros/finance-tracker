@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import {
   LayoutDashboard, CreditCard, TrendingUp, Target,
-  BarChart2, Upload, LogOut, X, Wallet,
+  BarChart2, Upload, LogOut, X,
 } from 'lucide-react';
 
 const navItems = [
@@ -26,10 +26,10 @@ export default function Sidebar({ profile, open, onClose }) {
     >
       {/* Logo */}
       <div className="h-16 flex items-center gap-3 px-5 border-b border-gray-100 shrink-0">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
-          <Wallet className="w-4 h-4 text-white" />
+        <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shrink-0">
+          <TrendingUp className="w-4 h-4 text-white" strokeWidth={2.5} />
         </div>
-        <span className="font-bold text-gray-900 text-base">Finance Tracker</span>
+        <span className="font-bold text-gray-900 text-base">Kashboard</span>
         <button
           onClick={onClose}
           className="ml-auto lg:hidden p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"

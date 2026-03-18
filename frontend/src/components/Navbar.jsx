@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
+import { TrendingUp } from 'lucide-react';
 
 const navItems = [
   { to: '/',        label: 'Dashboard',   icon: '📊' },
@@ -25,9 +26,11 @@ export default function Navbar({ profile }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2 font-bold text-lg text-gray-900">
-            <span>💰</span>
-            <span>Finance Tracker</span>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-emerald-500" strokeWidth={2.5} />
+            <span className="text-xl font-black tracking-tight bg-gradient-to-r from-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+              Kashboard
+            </span>
           </div>
 
           {/* Desktop nav */}
