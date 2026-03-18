@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { format, parseISO } from 'date-fns'
 import { Plus, X } from 'lucide-react'
-import { getIncome, addIncome, deleteIncome, getCategories } from '../api.js'
+import { getIncome, addIncome, deleteIncome, getCategories, getSuggestions } from '../api.js'
+import AutocompleteInput from '../components/AutocompleteInput'
 
 const fmt = n => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
 
@@ -38,17 +39,20 @@ export default function Income() {
   const [form, setForm]             = useState(emptyForm())
   const [saving, setSaving]         = useState(false)
   const [deleteId, setDeleteId]     = useState(null)
+  const [suggestions, setSuggestions] = useState([])
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const token = await getAccessTokenSilently()
-      const [data, cats] = await Promise.all([
+      const [data, cats, sugg] = await Promise.all([
         getIncome(token, filterFrom || undefined, filterTo || undefined),
         getCategories(token).catch(() => null),
+        getSuggestions(token, 'income').catch(() => []),
       ])
       setRows(data)
       if (cats?.income?.length) setCategories(cats.income)
+      setSuggestions(sugg || [])
     } catch (e) { setError(e.message) }
     finally { setLoading(false) }
   }, [getAccessTokenSilently, filterFrom, filterTo])
@@ -116,8 +120,13 @@ export default function Income() {
               </div>
               <div>
                 <label className="label">Source</label>
-                <input type="text" className="input" value={form.source}
-                  onChange={e => setForm(f => ({ ...f, source: e.target.value }))} />
+                <AutocompleteInput
+                  value={form.source}
+                  onChange={val => setForm(f => ({ ...f, source: val }))}
+                  suggestions={suggestions}
+                  placeholder="e.g. Salary"
+                  className="input"
+                />
               </div>
               <div>
                 <label className="label">Category</label>

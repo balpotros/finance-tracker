@@ -12,6 +12,7 @@ const budgetRouter   = require('./routes/budget');
 const dashboardRouter = require('./routes/dashboard');
 const importRouter      = require('./routes/import');
 const categoriesRouter  = require('./routes/categories');
+const transactionsRouter = require('./routes/transactions');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/budget',   budgetRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/import',      importRouter);
 app.use('/api/categories',  categoriesRouter);
+app.use('/api/transactions', transactionsRouter);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Finance Tracker API running on port ${PORT}`));

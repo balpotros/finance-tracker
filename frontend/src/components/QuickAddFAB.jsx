@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
-import { addExpense, addIncome, getCategories } from '../api.js'
+import { addExpense, addIncome, getCategories, getSuggestions } from '../api.js'
+import AutocompleteInput from './AutocompleteInput.jsx'
 
 export default function QuickAddFAB() {
   const { getAccessTokenSilently } = useAuth0()
@@ -10,6 +11,7 @@ export default function QuickAddFAB() {
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
   const [categories, setCategories] = useState({ expense: [], income: [] })
+  const [suggestions, setSuggestions] = useState([])
   const [saving, setSaving] = useState(false)
   const [flash, setFlash] = useState(null)
 
@@ -20,6 +22,14 @@ export default function QuickAddFAB() {
       .then(c => setCategories(c))
       .catch(() => {})
   }, [open, getAccessTokenSilently])
+
+  useEffect(() => {
+    if (!open) return
+    getAccessTokenSilently()
+      .then(t => getSuggestions(t, type))
+      .then(data => setSuggestions(data.suggestions || []))
+      .catch(() => setSuggestions([]))
+  }, [open, type, getAccessTokenSilently])
 
   // Close on Escape
   useEffect(() => {
@@ -78,7 +88,7 @@ export default function QuickAddFAB() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Quick add"
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-green-600 hover:bg-green-500 active:scale-95 shadow-lg shadow-green-900/40 flex items-center justify-center transition-all duration-150"
+        className="fixed bottom-20 sm:bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-green-600 hover:bg-green-500 active:scale-95 shadow-lg shadow-green-900/40 flex items-center justify-center transition-all duration-150"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -176,11 +186,11 @@ export default function QuickAddFAB() {
               {/* Description */}
               <div>
                 <label className="text-xs text-gray-400 block mb-1.5">Description</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Coffee, Salary..."
+                <AutocompleteInput
                   value={description}
-                  onChange={e => setDescription(e.target.value)}
+                  onChange={setDescription}
+                  suggestions={suggestions}
+                  placeholder="e.g. Coffee, Salary..."
                   className="w-full bg-gray-800 border border-gray-700 text-white placeholder-gray-500 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 transition-colors"
                 />
               </div>

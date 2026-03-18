@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { format, parseISO } from 'date-fns'
 import { Plus, X } from 'lucide-react'
-import { getExpenses, addExpense, deleteExpense, getCategories } from '../api.js'
+import { getExpenses, addExpense, deleteExpense, getCategories, getSuggestions } from '../api.js'
+import AutocompleteInput from '../components/AutocompleteInput'
 
 const fmt = n => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
 
@@ -38,17 +39,20 @@ export default function Expenses() {
   const [form, setForm]             = useState(emptyForm())
   const [saving, setSaving]         = useState(false)
   const [deleteId, setDeleteId]     = useState(null)
+  const [suggestions, setSuggestions] = useState([])
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const token = await getAccessTokenSilently()
-      const [data, cats] = await Promise.all([
+      const [data, cats, sugg] = await Promise.all([
         getExpenses(token, filterFrom || undefined, filterTo || undefined),
         getCategories(token).catch(() => null),
+        getSuggestions(token, 'expense').catch(() => []),
       ])
       setRows(data)
       if (cats?.expense?.length) setCategories(cats.expense)
+      setSuggestions(sugg || [])
     } catch (e) { setError(e.message) }
     finally { setLoading(false) }
   }, [getAccessTokenSilently, filterFrom, filterTo])
@@ -116,8 +120,13 @@ export default function Expenses() {
               </div>
               <div>
                 <label className="label">Vendor</label>
-                <input type="text" className="input" value={form.vendor}
-                  onChange={e => setForm(f => ({ ...f, vendor: e.target.value }))} />
+                <AutocompleteInput
+                  value={form.vendor}
+                  onChange={val => setForm(f => ({ ...f, vendor: val }))}
+                  suggestions={suggestions}
+                  placeholder="e.g. Costco"
+                  className="input"
+                />
               </div>
               <div>
                 <label className="label">Category</label>

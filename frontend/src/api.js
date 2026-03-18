@@ -87,3 +87,6 @@ export const deleteCategory = (token, data) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   })
+
+export const getSuggestions = (token, type) =>
+  apiFetch(`/api/suggestions?type=${type}`, token)

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import AutocompleteInput from './AutocompleteInput';
 
-export default function TransactionModal({ open, onClose, onSave, initial, type, currentUserId }) {
+export default function TransactionModal({ open, onClose, onSave, initial, type, currentUserId, suggestions = [] }) {
   const isExpense = type === 'expense';
   const EXPENSE_CATS = ['Bills','Car','Clothes','Entertainment','Food','Other','Sadaf','Vacation','Self Improve','House','Subscription','Work','Health','Gift'];
   const INCOME_CATS  = ['Job','Tax Refund','Investments','Gift','Other','Bonus'];
@@ -89,8 +90,13 @@ export default function TransactionModal({ open, onClose, onSave, initial, type,
 
           <div>
             <label className="label">{isExpense ? 'Vendor' : 'Source'} *</label>
-            <input type="text" className="input" value={form[nameField]}
-              onChange={e => set(nameField, e.target.value)} required />
+            <AutocompleteInput
+              value={form[nameField]}
+              onChange={val => set(nameField, val)}
+              suggestions={suggestions}
+              placeholder={isExpense ? 'e.g. Costco' : 'e.g. Salary'}
+              className="input"
+            />
           </div>
 
           <div>
