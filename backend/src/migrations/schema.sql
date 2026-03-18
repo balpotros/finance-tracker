@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
+  picture TEXT,
   household_id UUID REFERENCES households(id) ON DELETE SET NULL,
   auth0_sub TEXT UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -50,9 +51,18 @@ CREATE TABLE IF NOT EXISTS budget_targets (
   UNIQUE (household_id, category)
 );
 
+CREATE TABLE IF NOT EXISTS categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  household_id UUID NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('expense', 'income')),
+  name TEXT NOT NULL,
+  UNIQUE (household_id, type, name)
+);
+
 -- Indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_expenses_household_date ON expenses(household_id, date);
 CREATE INDEX IF NOT EXISTS idx_expenses_user ON expenses(user_id);
 CREATE INDEX IF NOT EXISTS idx_income_household_date ON income(household_id, date);
 CREATE INDEX IF NOT EXISTS idx_income_user ON income(user_id);
 CREATE INDEX IF NOT EXISTS idx_budget_targets_household ON budget_targets(household_id);
+CREATE INDEX IF NOT EXISTS idx_categories_household ON categories(household_id);
